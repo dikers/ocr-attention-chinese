@@ -17,8 +17,8 @@ fi
 echo 'input file line count: '
 wc -l $1
 
-export PYTHONPATH=./
-python3 fsns_segment_string.py -mi 14 -ma 14 -i  $1  --output_dir ${BASE_DIR}
+export PYTHONPATH=../
+python3 ../create_data/fsns_segment_string.py -mi 14 -ma 14 -i  $1  --output_dir ${BASE_DIR}
 
 
 echo 'input file line count: '
@@ -43,11 +43,6 @@ head -n ${train_count} ${BASE_DIR}'text_split.txt'  > ${BASE_DIR}'train.txt'
 tail -n ${val_count}   ${BASE_DIR}'text_split.txt'  > ${BASE_DIR}'valid.txt'
 
 
-if [ ! -d ${BASE_DIR}"tfrecords" ]
-then
-    mkdir ${BASE_DIR}"tfrecords"
-fi
-
 if [ ! -d ${BASE_DIR}"data" ]
 then
     mkdir ${BASE_DIR}"data"
@@ -55,25 +50,30 @@ then
     mkdir ${BASE_DIR}"data/valid"
 fi
 
+# 生成图片
 trdg \
 -c $train_count -l cn -i ${BASE_DIR}'train.txt' -na 2 \
 --output_dir ${BASE_DIR}"data/train" -ft "../sample_data/font/test01.ttf"
-
-mv ${BASE_DIR}"data/train/labels.txt" ${BASE_DIR}"train_labels.txt"
-
 
 trdg \
 -c $val_count -l cn -i ${BASE_DIR}'valid.txt' -na 2 \
 --output_dir ${BASE_DIR}"data/valid" -ft "../sample_data/font/test01.ttf"
 
+mv ${BASE_DIR}"data/train/labels.txt" ${BASE_DIR}"train_labels.txt"
 mv ${BASE_DIR}"data/valid/labels.txt" ${BASE_DIR}"valid_labels.txt"
 
-python3 rename_label_file.py -i ${BASE_DIR}"train_labels.txt" -o ${BASE_DIR}"data/train"
+
+# 生成标注文本
+python3 ../create_data/rename_label_file.py -i ${BASE_DIR}"train_labels.txt" -o ${BASE_DIR}"data/train"
+python3 ../create_data/rename_label_file.py -i ${BASE_DIR}"valid_labels.txt" -o ${BASE_DIR}"data/valid"
+
+# 生成tfrecord 
+python3 ../create_data/generate_tfrecord_jpg.py -o ${BASE_DIR}  -i ${BASE_DIR}'data/train'  -d ${BASE_DIR}'dic.txt'  -t 'train'
+python3 ../create_data/generate_tfrecord_jpg.py -o ${BASE_DIR}  -i ${BASE_DIR}'data/valid'  -d ${BASE_DIR}'dic.txt'  -t 'valid'
+
+# python3 ../create_data/generate_tfrecord_jpg.py -o ../train_model/datasets/data/fsns/  -i '../train_model/datasets/data/fsns/data/train/'  -d '../train_model/datasets/data/fsns/dic.txt'  -t 'train'
 
 
-python3 rename_label_file.py -i ${BASE_DIR}"valid_labels.txt" -o ${BASE_DIR}"data/valid"
 
-
-python3 generate_tfrecord_jpg.py -o ${BASE_DIR}  -i ${BASE_DIR}'data/train'  -d ${BASE_DIR}'dic.txt'  -t 'train'
-
-python3 generate_tfrecord_jpg.py -o ${BASE_DIR}  -i ${BASE_DIR}'data/valid'  -d ${BASE_DIR}'dic.txt'  -t 'valid'
+cp ${BASE_DIR}'dic.txt' ${BASE_DIR}'train/dic.txt' 
+cp ${BASE_DIR}'dic.txt' ${BASE_DIR}'valid/dic.txt' 

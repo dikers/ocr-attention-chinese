@@ -60,7 +60,7 @@ def parse_arguments():
 
 
 
-def encode_utf8_string(text, length, dic, null_char_id=5462):
+def encode_utf8_string(text, length, dic, null_char_id):
     char_ids_padded = [null_char_id]*length
     char_ids_unpadded = [null_char_id]*len(text)
     for i in range(len(text)):
@@ -83,10 +83,21 @@ def _generate_tfrecord(dict_file, input_data_path, output_dir, tfrecord_type):
     null_char_id = -1
     with open(dict_file, encoding="utf") as dict_file:
         for line in dict_file:
+            line = line.replace('\n', '').replace('\r', '')
+            line = line.replace(u'\xa0', u'')
+            if len(line.strip().split('\t')) !=2:
+                print("Error {}     line [{}] ".format(line , line ))
+                continue
+            #print('[{}]'.format(line))
             (key, value) = line.strip().split('\t')
-            dict[value] = int(key)
-            if value == '<>':
-                null_char_id = key
+            #print('key=[{}] value[{}]'.format(key, value))
+            if value == '<nul>':
+                null_char_id = int(key)
+                dict[' ']= int(key)
+            else:
+                dict[value] = int(key)
+                
+                
     dict_length = len(dict)
     print('[Message]   dict length: {}   null_char_id: {}'.format(dict_length, null_char_id))
 
@@ -99,11 +110,11 @@ def _generate_tfrecord(dict_file, input_data_path, output_dir, tfrecord_type):
     print(len(addrs_image))
     print(len(addrs_label))
 
-    output_dir = os.path.join(output_dir, 'tfrecords')
+    output_dir = os.path.join(output_dir, tfrecord_type)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-    tfrecord_file = os.path.join(output_dir, tfrecord_type+"_tfrecord")
+    tfrecord_file = os.path.join(output_dir, "train_tfrecord")
     tfrecord_writer = tf.io.TFRecordWriter(tfrecord_file)
 
     process_bar = show_process.ShowProcess(len(addrs_image))
@@ -117,6 +128,7 @@ def _generate_tfrecord(dict_file, input_data_path, output_dir, tfrecord_type):
         np_data = np.array(img)
         image_data = img.tobytes()
         for text in open(addrs_label[j], encoding="utf"):
+            #print('text [{}], dict_length= {}  null_char_id={} '.format(text , dict_length, null_char_id))
             char_ids_padded, char_ids_unpadded = encode_utf8_string(
                 text=text,
                 dic=dict,
@@ -124,8 +136,6 @@ def _generate_tfrecord(dict_file, input_data_path, output_dir, tfrecord_type):
                 null_char_id=null_char_id)
 
             process_bar.show_process()
-            time.sleep(0.05)
-
         example = tf.train.Example(features=tf.train.Features(
             feature={
                 'image/encoded': _bytes_feature(image_data),

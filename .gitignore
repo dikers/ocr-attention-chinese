@@ -93,3 +93,6 @@ cdk.context.json
 *data_en
 *.zip
 *temp
+
+*data
+*datasets

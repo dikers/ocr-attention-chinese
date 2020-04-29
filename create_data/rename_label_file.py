@@ -57,7 +57,6 @@ def generate_label_file(input_file, output_dir):
         for line in lines:
             line = line.replace('\r', '').replace('\n', '')
             process_bar.show_process()
-            time.sleep(0.05)
 
             if len(line.split(' ')) != 2:
                 print("ERROR  line = {} ".format(line))

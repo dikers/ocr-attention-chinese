@@ -63,7 +63,7 @@ def generate_dic_txt(lines, output_dir):
     index = 0
     new_lines = []
     for char in char_set:
-        if char in [' ', '\t' , '\n', '\r']:
+        if char in [' ', '\t' , '\n', '\r']  or char == ' ':
             continue
         new_lines.append('{}\t{}'.format(index, char))
         index += 1
@@ -101,7 +101,7 @@ def combined_line(output_dir,
 
     with open(output_file, 'w',  encoding='utf-8') as f:
         for new_line in new_lines:
-
+            new_line = new_line.replace('\xa0', '').replace('\n', '').replace(' ', '').replace('\r', '')
             f.write(new_line+'\n')
     print("Write {} lines in file [{}]".format(len(new_lines) , output_file))
     return output_file, len(new_lines)
